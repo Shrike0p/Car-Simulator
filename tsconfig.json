@@ -22,6 +22,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/car-scene.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/car-scene.jsx", "components/track/glb-track.jsx", "components/UI/control-overlay.jsx"],
   "exclude": ["node_modules"]
 }
