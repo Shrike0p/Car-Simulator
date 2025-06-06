@@ -15,7 +15,7 @@ export const getAllModels = async (count: number = 9) => {
         if (!res.ok) return null;
         const data = await res.json();
         return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
         return { err };
     }
 };
@@ -38,7 +38,7 @@ export const getModelsByNextCursor = async (
         });
         const data = await res.json();
         return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
         return { err };
     }
 };
@@ -63,7 +63,7 @@ export const getModelsBySearchQuery = async (
         });
         const data = await res.json();
         return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
         return {
             err,
         };
@@ -82,7 +82,7 @@ export const downloadModels = async (modelUid: string) => {
         );
         const data = await res.json();
         return data;
-    } catch (err: any) {
+    } catch (err: unknown) {
         return {
             err,
         };

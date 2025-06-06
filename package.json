@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@gltf-transform/core": "^4.1.4",
+    "@gltf-transform/functions": "^4.1.4",
     "@radix-ui/react-collapsible": "^1.1.11",
     "@radix-ui/react-slot": "^1.2.3",
     "@react-three/drei": "^10.0.8",
