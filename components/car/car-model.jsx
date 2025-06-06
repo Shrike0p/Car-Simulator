@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import useKeyboard from "@/lib/hooks/useKeyboard.js";
+import useKeyboard from "@/lib/hooks/useKeyboard";
 import { useCollisionDetection } from "@/lib/hooks/useCollisionDetection";
 import { CAR_CONFIG } from "@/lib/config/carConfig";
 
