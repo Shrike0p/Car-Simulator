@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { AVAILABLE_CARS, AVAILABLE_MAPS } from "@/lib/config/gameConfig";
 import { SelectionCard } from "./selection-card";
 import { CarPreview } from "./garage-car-preview";
+import SketchfabGallery from "../sketch-fab/sketch-fab-models";
 
 export function LandingPage({ onStart }) {
   const [selectedCar, setSelectedCar] = useState(AVAILABLE_CARS[0]);
@@ -15,10 +16,8 @@ export function LandingPage({ onStart }) {
     }, 100);
   };
 
-
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-black text-white font-sans">
-
       {/* Car Preview */}
       {showPreview && (
         <div className="absolute inset-0 z-10 pointer-events-none">
@@ -30,7 +29,9 @@ export function LandingPage({ onStart }) {
       <div className="absolute top-6 left-6 z-20 bg-black/60 p-4 rounded-lg shadow-lg backdrop-blur-sm max-w-xs">
         <h2 className="text-2xl font-bold">{selectedCar.name}</h2>
         <p className="text-sm">🏎️ Top Speed: {selectedCar.topSpeed} km/h</p>
-        <p className="text-sm">⚡ Acceleration: {selectedCar.acceleration}s (0-100)</p>
+        <p className="text-sm">
+          ⚡ Acceleration: {selectedCar.acceleration}s (0-100)
+        </p>
       </div>
 
       {/* Menu Section */}
@@ -41,13 +42,15 @@ export function LandingPage({ onStart }) {
 
         <div className="w-80">
           <SelectionCard
-            title="Select Car"
+            title="Select Default Car"
             items={AVAILABLE_CARS}
             selectedItem={selectedCar}
             onSelect={setSelectedCar}
           />
         </div>
-
+        <div className="w-80">
+          <SketchfabGallery />
+        </div>
         <div className="w-80">
           <SelectionCard
             title="Select Map"
