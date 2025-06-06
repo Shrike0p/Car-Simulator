@@ -1,15 +1,15 @@
 import { Canvas } from "@react-three/fiber";
 import { useRef, Suspense, useState } from "react";
-import {Loader} from "@/components/utility/loader"
-import {Ground} from "@/components/utility/ground"
+import { Loader } from "@/components/utility/loader";
+import { Ground } from "@/components/utility/ground";
 import { GLBTrack } from "./track/glb-track";
-import {SimpleTrack} from "@/components/track/simple-track"
-import {CarModel} from "@/components/car/car-model"
-import {MultiCamera} from "@/components/camera/multi-camera"
+import { SimpleTrack } from "@/components/track/simple-track";
+import { CarModel } from "@/components/car/car-model";
+import { MultiCamera } from "@/components/camera/multi-camera";
 import { ControlsOverlay } from "./UI/control-overlay";
-import {LandingPage} from "@/components/UI/landing-page"
-import {SceneLighting} from "@/components/UI/scene-lightning"
-import {useCameraControls} from "@/lib/hooks/useCameraControls"
+import { LandingPage } from "@/components/UI/landing-page";
+import { SceneLighting } from "@/components/UI/scene-lightning";
+import { useCameraControls } from "@/lib/hooks/useCameraControls";
 
 export default function CarScene() {
   const [carState, setCarState] = useState(null);
@@ -88,6 +88,7 @@ export default function CarScene() {
             trackRef={trackRef}
             useGLBTrack={!selectedMap.isSimple}
             carModel={selectedCar.model}
+            isSketchfabModel={selectedCar.isSketchfabModel}
           />
         </Suspense>
 

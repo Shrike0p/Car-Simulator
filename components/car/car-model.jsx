@@ -2,28 +2,35 @@ import { useRef, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import { useKeyboard } from "@/lib/hooks/useKeyBoard";
+import { useKeyboard } from "@/lib/hooks/useKeyboard";
 import { useCollisionDetection } from "@/lib/hooks/useCollisionDetection";
 import { CAR_CONFIG } from "@/lib/config/carConfig";
 
 // Function to calculate bounding box and normalize scale
-const calculateUniformScale = (scene, targetSize = 2) => {
+const calculateUniformScale = (scene, targetSize = 8) => {
   const box = new THREE.Box3().setFromObject(scene);
   const size = box.getSize(new THREE.Vector3());
-  
+
   // Get the largest dimension to scale uniformly
   const maxDimension = Math.max(size.x, size.y, size.z);
-  
+
   // Calculate scale factor to make the largest dimension equal to targetSize
   const scaleFactor = targetSize / maxDimension;
-  
+
   return scaleFactor;
 };
 
-export function CarModel({ onStateChange, trackRef, useGLBTrack, carModel }) {
+export function CarModel({
+  onStateChange,
+  trackRef,
+  useGLBTrack,
+  carModel,
+  isSketchfabModel,
+}) {
   const group = useRef();
   const carGroup = useRef();
   const keys = useKeyboard();
+  // Use the actual model path, whether it's a default car or downloaded Sketchfab model
   const { scene } = useGLTF(carModel);
   const wheelRefs = useRef([]);
   const [uniformScale, setUniformScale] = useState(1);
@@ -39,9 +46,9 @@ export function CarModel({ onStateChange, trackRef, useGLBTrack, carModel }) {
   useEffect(() => {
     if (scene) {
       // Calculate uniform scale for this car model
-      const scale = calculateUniformScale(scene, 8); // Target size of 2 units
+      const scale = calculateUniformScale(scene, 8); // Target size of 8 units
       setUniformScale(scale);
-      
+
       // Find and store wheel meshes
       const wheels = [];
       scene.traverse((child) => {
@@ -77,7 +84,7 @@ export function CarModel({ onStateChange, trackRef, useGLBTrack, carModel }) {
 
   useFrame(() => {
     const state = carState.current;
-    
+
     // Rotate wheels based on velocity
     const wheelRotationSpeed = state.velocity * 0.5;
     wheelRefs.current.forEach((wheel) => {

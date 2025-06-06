@@ -1,13 +1,14 @@
-import { SearchX, X, ChevronDown, ChevronUp, } from "lucide-react";
+import { SearchX, X, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { useState, useEffect } from "react";
-
+import { WebIO } from '@gltf-transform/core';
+import { prune, dedup, center } from '@gltf-transform/functions';
 import {
   getAllModels,
   getModelsByNextCursor,
   getModelsBySearchQuery,
+  downloadModels,
 } from "@/app/api/clientApis";
 import ModelCard from "./model-card";
-// import SketchfabModelUploader from "./model-uploader";
 import { useDebounce } from "use-debounce";
 import useAssetValuesStore from "@/app/store/assetValueStore";
 
@@ -44,6 +45,8 @@ const SketchfabGallery = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useDebounce(searchQuery, 400);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadedModels, setDownloadedModels] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (debouncedQuery === "") {
@@ -170,6 +173,107 @@ const SketchfabGallery = () => {
     }
   };
 
+  const optimizeModel = async (glbBlob: Blob): Promise<Blob> => {
+    try {
+      const io = new WebIO();
+
+      // Convert blob to array buffer
+      const arrayBuffer = await glbBlob.arrayBuffer();
+
+      // Read the document
+      const document = await io.readBinary(new Uint8Array(arrayBuffer));
+
+      // Apply transformations to standardize the model
+      await document.transform(
+        // Center the model at the origin
+        center(),
+        // Remove unused nodes, materials, etc.
+        prune(),
+        // Remove duplicate vertices
+        dedup()
+      );
+
+      const optimizedArrayBuffer = await io.writeBinary(document);
+
+      const optimizedBlob = new Blob([optimizedArrayBuffer], { type: 'model/gltf-binary' });
+
+      // Log optimization results
+      console.log('Model optimization complete');
+      console.log('Original size:', (glbBlob.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('Optimized size:', (optimizedBlob.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('Size reduction:', ((1 - optimizedBlob.size / glbBlob.size) * 100).toFixed(2), '%');
+
+      return optimizedBlob;
+    } catch (error) {
+      console.error('Error optimizing model:', error);
+      return glbBlob;
+    }
+  };
+
+  const handleDownload = async (model: SketchfabModel) => {
+    try {
+      setIsDownloading(true);
+      setError(null);
+
+      const data = await downloadModels(model.uid);
+      if (data.err) {
+        setError("Failed to get download URL");
+        return;
+      }
+
+      const glbUrl = data.glb?.url;
+      if (!glbUrl) {
+        setError("No GLB file URL found");
+        return;
+      }
+
+      const response = await fetch(glbUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download model: ${response.statusText}`);
+      }
+
+      // Convert the model to a blob
+      const originalBlob = await response.blob();
+
+      console.log('Original model size:', (originalBlob.size / 1024 / 1024).toFixed(2), 'MB');
+
+      console.log('Optimizing model...');
+      const optimizedBlob = await optimizeModel(originalBlob);
+
+      console.log('Optimized model size:', (optimizedBlob.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('Size reduction:', ((1 - optimizedBlob.size / originalBlob.size) * 100).toFixed(2), '%');
+
+      const localUrl = URL.createObjectURL(optimizedBlob);
+
+      setDownloadedModels(prev => ({
+        ...prev,
+        [model.uid]: localUrl
+      }));
+
+      const updatedModel = {
+        ...model,
+        model: localUrl,
+        isSketchfabModel: true
+      };
+
+      setSelectedModel(updatedModel);
+
+    } catch (error) {
+      setError(`Failed to download model: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Cleanup function to revoke object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(downloadedModels).forEach(url => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [downloadedModels]);
+
   return (
     <div className="relative w-full">
 
@@ -183,7 +287,28 @@ const SketchfabGallery = () => {
                 <h3 className="text-lg font-bold text-white">Browse 3D Models</h3>
                 <p className="text-sm text-gray-400">Choose from Sketchfab gallery</p>
                 {selectedModel && (
-                  <p className="text-xs text-green-400 mt-1">Selected: {selectedModel.name}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-green-400">Selected: {selectedModel.name}</p>
+                    {!downloadedModels[selectedModel.uid] ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDownload(selectedModel);
+                        }}
+                        disabled={isDownloading}
+                        className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isDownloading ? (
+                          <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                        ) : (
+                          <Download size={12} />
+                        )}
+                        Download
+                      </button>
+                    ) : (
+                      <span className="text-xs text-green-400">✓ Downloaded</span>
+                    )}
+                  </div>
                 )}
               </div>
               <div className="text-green-400">
@@ -194,7 +319,7 @@ const SketchfabGallery = () => {
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-        <div className="absolute top-full mt-2 w-full z-50 bg-gray-900/95 backdrop-blur-md rounded-lg border border-gray-700 p-4 max-h-[300px] overflow-y-auto shadow-lg">
+          <div className="absolute top-full mt-2 w-full z-50 bg-gray-900/95 backdrop-blur-md rounded-lg border border-gray-700 p-4 max-h-[300px] overflow-y-auto shadow-lg">
 
             {/* Search */}
             <div className="relative mb-4">
