@@ -1,41 +1,20 @@
 "use client"
 import dynamic from "next/dynamic";
-import { Suspense } from "react";
+import LoaderScreen from "../components/UI/loader-screen";
 
-// Dynamic import with loading component
+// Dynamic import with loading component. LoaderScreen is drei-free, so using it
+// here does NOT pull three.js into the initial bundle (keeps the code-split).
+// `loading` already renders the boot screen while the chunk downloads, so no
+// extra <Suspense> wrapper is needed here.
 const CarScene = dynamic(() => import("../components/car-scene"), {
   ssr: false,
-  loading: () => (
-    <div style={{
-      width: "100vw",
-      height: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#f0f0f0"
-    }}>
-      <div>Loading 3D Scene...</div>
-    </div>
-  )
+  loading: () => <LoaderScreen indeterminate label="BOOTING ENGINE" />,
 });
 
 export default function Home() {
   return (
     <div style={{ width: "100vw", height: "100vh", overflow: "hidden" }}>
-      <Suspense fallback={
-        <div style={{
-          width: "100vw",
-          height: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "#f0f0f0"
-        }}>
-          <div>Loading...</div>
-        </div>
-      }>
-        <CarScene />
-      </Suspense>
+      <CarScene />
     </div>
   );
 }

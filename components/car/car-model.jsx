@@ -6,6 +6,16 @@ import useKeyboard from "@/lib/hooks/useKeyboard";
 import { useCollisionDetection } from "@/lib/hooks/useCollisionDetection";
 import { CAR_CONFIG } from "@/lib/config/carConfig";
 
+// Matches wheel meshes across models: "wheel"/"tyre"/"tire"/"rim" as a whole
+// token (bounded by start/end or a non-letter), so "rim_rf" matches but
+// "bodyshell_primary" (p-rim-ary) and "trim" do NOT.
+const WHEEL_NAME_RE = /(?:^|[^a-z])(wheel|tyre|tire|rim)(?:[^a-z]|$)/i;
+
+// Reusable scratch matrices for the wheel-spin math (avoid per-frame allocation)
+const _rot = new THREE.Matrix4();
+const _spin = new THREE.Matrix4();
+const _negT = new THREE.Matrix4();
+
 // Function to calculate bounding box and normalize scale
 const calculateUniformScale = (scene, targetSize = 8) => {
   const box = new THREE.Box3().setFromObject(scene);
@@ -33,6 +43,7 @@ export function CarModel({
   // Use the actual model path, whether it's a default car or downloaded Sketchfab model
   const { scene } = useGLTF(carModel);
   const wheelRefs = useRef([]);
+  const wheelAngle = useRef(0);
   const [uniformScale, setUniformScale] = useState(1);
 
   const carState = useRef({
@@ -42,27 +53,38 @@ export function CarModel({
     angularVelocity: 0,
   });
 
-  // Calculate uniform scale and find wheels when scene loads
+  // Calculate uniform scale and set up wheel spin data when scene loads
   useEffect(() => {
-    if (scene) {
-      // Calculate uniform scale for this car model
-      const scale = calculateUniformScale(scene, 8); // Target size of 8 units
-      setUniformScale(scale);
+    if (!scene) return;
 
-      // Find and store wheel meshes
-      const wheels = [];
-      scene.traverse((child) => {
-        if (
-          child.isMesh &&
-          (child.name.toLowerCase().includes("wheel") ||
-            child.name.toLowerCase().includes("tyre") ||
-            child.name.toLowerCase().includes("tire"))
-        ) {
-          wheels.push(child);
-        }
-      });
-      wheelRefs.current = wheels;
+    // Calculate uniform scale for this car model
+    setUniformScale(calculateUniformScale(scene, 8)); // Target size of 8 units
+
+    // Reuse data if this scene was already processed (guards StrictMode / remount)
+    if (scene.userData.__wheelSpin) {
+      wheelRefs.current = scene.userData.__wheelSpin;
+      return;
     }
+
+    // Some GLB car models bake every wheel node's pivot at the model origin
+    // (0,0,0) instead of the wheel hub. Rotating such a mesh directly makes it
+    // orbit the car's centre and fly off. Instead of moving the wheel, we drive
+    // its local matrix each frame so the geometry spins about ITS OWN centre:
+    //   matrix = base · T(centre) · Rx(angle) · T(-centre)
+    // At angle 0 this equals `base`, so a parked car's wheels never shift.
+    const wheels = [];
+    scene.traverse((child) => {
+      if (child.isMesh && WHEEL_NAME_RE.test(child.name)) {
+        child.geometry.computeBoundingBox();
+        const center = child.geometry.boundingBox.getCenter(new THREE.Vector3());
+        child.updateMatrix();
+        child.matrixAutoUpdate = false; // we control child.matrix ourselves
+        wheels.push({ mesh: child, center, base: child.matrix.clone() });
+      }
+    });
+
+    scene.userData.__wheelSpin = wheels;
+    wheelRefs.current = wheels;
   }, [scene]);
 
   const { isOnTrack, groundHeight } = useCollisionDetection(
@@ -85,13 +107,20 @@ export function CarModel({
   useFrame(() => {
     const state = carState.current;
 
-    // Rotate wheels based on velocity
-    const wheelRotationSpeed = state.velocity * 0.5;
-    wheelRefs.current.forEach((wheel) => {
-      if (wheel) {
-        wheel.rotation.x += wheelRotationSpeed;
-      }
-    });
+    // Rotate wheels based on velocity — each spins about its own centre so it
+    // stays bolted to the car (see the setup effect for the matrix math).
+    wheelAngle.current += state.velocity * 0.5;
+    if (wheelRefs.current.length) {
+      _rot.makeRotationX(wheelAngle.current);
+      wheelRefs.current.forEach(({ mesh, center, base }) => {
+        _spin
+          .makeTranslation(center.x, center.y, center.z)
+          .multiply(_rot)
+          .multiply(_negT.makeTranslation(-center.x, -center.y, -center.z));
+        mesh.matrix.copy(base).multiply(_spin);
+        mesh.matrixWorldNeedsUpdate = true;
+      });
+    }
 
     let newVelocity = state.velocity;
     let newAngularVelocity = state.angularVelocity;

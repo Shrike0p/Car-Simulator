@@ -280,15 +280,15 @@ const SketchfabGallery = () => {
       <Collapsible open={open} onOpenChange={setOpen} className="w-full">
         <CollapsibleTrigger asChild>
           <div
-            className="bg-gray-900/80 backdrop-blur-sm rounded-lg border border-gray-700 p-4 cursor-pointer hover:border-gray-600 transition-colors w-80"
+            className="bg-white/5 backdrop-blur-md rounded-xl border border-white/12 p-4 cursor-pointer hover:border-white/25 transition-colors w-full"
           >
             <div className="flex items-center justify-between select-none">
               <div>
-                <h3 className="text-lg font-bold text-white">Browse 3D Models</h3>
-                <p className="text-sm text-gray-400">Choose from Sketchfab gallery</p>
+                <p className="text-[11px] tracking-[0.2em] uppercase text-neutral-400 font-medium">Browse Models</p>
+                <p className="text-sm text-neutral-400 mt-0.5">From Sketchfab</p>
                 {selectedModel && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <p className="text-xs text-green-400">Selected: {selectedModel.name}</p>
+                  <div className="flex items-center gap-2 mt-2">
+                    <p className="text-xs text-neutral-200">Selected: {selectedModel.name}</p>
                     {!downloadedModels[selectedModel.uid] ? (
                       <button
                         onClick={(e) => {
@@ -296,30 +296,30 @@ const SketchfabGallery = () => {
                           handleDownload(selectedModel);
                         }}
                         disabled={isDownloading}
-                        className="text-xs bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-xs bg-neutral-100 hover:bg-white text-neutral-900 px-2 py-1 rounded flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isDownloading ? (
-                          <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />
+                          <div className="animate-spin h-3 w-3 border-2 border-neutral-900 border-t-transparent rounded-full" />
                         ) : (
                           <Download size={12} />
                         )}
                         Download
                       </button>
                     ) : (
-                      <span className="text-xs text-green-400">✓ Downloaded</span>
+                      <span className="text-xs text-neutral-400">✓ Downloaded</span>
                     )}
                   </div>
                 )}
               </div>
-              <div className="text-green-400">
-                {open ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+              <div className="text-neutral-400">
+                {open ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
               </div>
             </div>
           </div>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="absolute top-full mt-2 w-full z-50 bg-gray-900/95 backdrop-blur-md rounded-lg border border-gray-700 p-4 max-h-[300px] overflow-y-auto shadow-lg">
+          <div className="absolute top-full mt-2 w-full z-50 bg-black/70 backdrop-blur-md rounded-xl border border-white/12 p-4 max-h-[300px] overflow-y-auto shadow-lg">
 
             {/* Search */}
             <div className="relative mb-4">
@@ -328,13 +328,13 @@ const SketchfabGallery = () => {
                 placeholder="Search models..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 pr-8 text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
+                className="w-full bg-white/5 border border-white/15 rounded-lg px-3 py-2 pr-8 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/20"
                 maxLength={40}
               />
               {searchQuery && (
                 <button
                   onClick={clearSelection}
-                  className="absolute top-1/2 -translate-y-1/2 right-3 text-gray-400 hover:text-white transition-colors"
+                  className="absolute top-1/2 -translate-y-1/2 right-3 text-neutral-400 hover:text-neutral-100 transition-colors"
                 >
                   <X size={16} />
                 </button>
@@ -373,7 +373,7 @@ const SketchfabGallery = () => {
               )}
 
               {!loading && models?.length === 0 && !error && (
-                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-8 text-neutral-400">
                   <SearchX size={32} className="mb-2" />
                   <p className="text-sm text-center">
                     {debouncedQuery
@@ -386,7 +386,7 @@ const SketchfabGallery = () => {
               {/* Load More */}
               {isLoadingMore && (
                 <div className="flex justify-center mt-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-400"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-500"></div>
                 </div>
               )}
 

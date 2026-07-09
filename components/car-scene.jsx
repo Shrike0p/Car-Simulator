@@ -9,6 +9,7 @@ import { MultiCamera } from "@/components/camera/multi-camera";
 import { ControlsOverlay } from "./UI/control-overlay";
 import { LandingPage } from "@/components/UI/landing-page";
 import { SceneLighting } from "@/components/UI/scene-lightning";
+import { GameLoader } from "@/components/UI/game-loader";
 import { useCameraControls } from "@/lib/hooks/useCameraControls";
 
 export default function CarScene() {
@@ -34,6 +35,8 @@ export default function CarScene() {
 
   return (
     <>
+      <GameLoader carModel={selectedCar.model} />
+
       <ControlsOverlay
         cameraMode={cameraMode}
         onCameraModeChange={switchCamera}
